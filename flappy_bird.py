@@ -5,6 +5,7 @@ import time
 import neat
 import visualize
 import pickle
+from reproduction import CPBestReproduction
 pygame.font.init()  # init font
 
 
@@ -134,7 +135,6 @@ class Pipe():
     """
     represents a pipe object
     """
-    GAP = 200
     VEL = 5
 
     def __init__(self, x):
@@ -163,9 +163,14 @@ class Pipe():
         set the height of the pipe, from the top of the screen
         :return: None
         """
-        self.height = random.randrange(50, 600)
-        self.top = self.height - self.PIPE_TOP.get_height()
-        self.bottom = self.height + self.GAP
+        self.height = random.randrange(80, 700)
+        self.top = self.height - self.PIPE_TOP.get_height() 
+        self.top = min(0, self.top) # in case top pipe is below the title bar
+        gap = random.randrange(180, 250)
+        self.bottom = self.height + gap
+        # true gap
+        self.bottom = min(WIN_HEIGHT, self.bottom) # in case the bottom pipe is below the base
+        self.gap = self.bottom - (self.top + self.PIPE_TOP.get_height())
 
     def move(self):
         """
@@ -372,7 +377,8 @@ def eval_genomes(genomes, config):
             bird.move()
 
             # send bird location, top pipe location and bottom pipe location and determine from network whether to jump or not
-            output = nets[birds.index(bird)].activate((bird.y, abs(bird.y - pipes[pipe_ind].height), abs(bird.y - pipes[pipe_ind].bottom)))
+            # print(f"gap {pipes[pipe_ind].gap}")
+            output = nets[birds.index(bird)].activate((bird.y, abs(bird.y - pipes[pipe_ind].height), abs(bird.y - pipes[pipe_ind].bottom), pipes[pipe_ind].gap))
 
             if output[0] > 0.5:  # we use a tanh activation function so result will be between -1 and 1. if over 0.5 jump
                 bird.jump()
@@ -403,7 +409,8 @@ def eval_genomes(genomes, config):
             next_pipe = Pipe(WIN_WIDTH)
             last_pipe = pipes[-1]
             delta_height = abs(last_pipe.height - next_pipe.height)
-                
+            # print(f"delta height {delta_height}")
+            
             for genome in ge:
                 if delta_height > 0 and delta_height < 100:
                     genome.fitness += 2
@@ -431,7 +438,7 @@ def run(config_file):
     :param config_file: location of config file
     :return: None
     """
-    config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction,
+    config = neat.config.Config(neat.DefaultGenome, CPBestReproduction,
                          neat.DefaultSpeciesSet, neat.DefaultStagnation,
                          config_file)
 
