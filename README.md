@@ -1,18 +1,10 @@
-[![Run on Repl.it](https://repl.it/badge/github/techwithtim/NEAT-Flappy-Bird)](https://repl.it/github/techwithtim/NEAT-Flappy-Bird)
-# NEAT-Flappy-Bird
-An AI that plays flappy bird! Using the NEAT python module.
+# neat-flappy-bird ver2
+第一个版本因为在最开始设计的游戏的时候没有考虑完善生成管道的机制导致:
+1. 通过timer生成管道,在开始游戏的时候不能保证种群初始化之后,种群立刻得到训练,会浪费种群中的个体和迭代次数.
+2. 不能应用bonus 机制,对于泛化能力比较强的个体进行奖励.
 
-# Instructions
-Simply run *flappy_bird.py* and watch an AI start training itself to play the game of flappy bird!
-
-# Video Tutorial
-
-You can view on the details of this project here: https://www.youtube.com/watch?v=OGHA-elMrxI
-
-# Run in Gitpod
-
-You can also run NEAT-Flappy-Bird in Gitpod, a free online dev environment for GitHub:
-
-If you're intersted in a paid subscription with GitPod use the coupon code: TECHWITHTIM19
-
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/techwithtim/NEAT-Flappy-Bird/blob/master/flappy_bird.py)
+# todo 
+- [ ] 应用bonus机制，奖励泛化能力较强的个体
+- [ ] 修改游戏流程，点击确认之后在开始进行迭代
+- [ ] 修改游戏内字体
+- [ ] 应用新的mutation和crossover机制（Reproduction 机制） 

@@ -1,11 +1,3 @@
-"""
-The classic game of flappy bird. Make with python
-and pygame. Features pixel perfect collision using masks :o
-
-Date Modified:  Jul 30, 2019
-Author: Tech With Tim
-Estimated Work Time: 5 hours (1 just for that damn collision)
-"""
 import pygame
 import random
 import os
@@ -15,15 +7,23 @@ import visualize
 import pickle
 pygame.font.init()  # init font
 
+
 WIN_WIDTH = 600
 WIN_HEIGHT = 800
 FLOOR = 730
-STAT_FONT = pygame.font.SysFont("comicsans", 50)
-END_FONT = pygame.font.SysFont("comicsans", 70)
+STAT_FONT = pygame.font.Font("./imgs/04B_19__.TTF", 30)
+END_FONT = pygame.font.Font("./imgs/04B_19__.TTF", 30)
 DRAW_LINES = False
+
+is_start = False
 
 WIN = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 pygame.display.set_caption("Flappy Bird")
+
+game_start_surface = pygame.transform.scale2x(
+    pygame.image.load('./imgs/message.png').convert_alpha())
+game_start_rect = game_start_surface.get_rect(
+    center=(WIN_WIDTH // 2, WIN_HEIGHT // 2))
 
 pipe_img = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","pipe.png")).convert_alpha())
 bg_img = pygame.transform.scale(pygame.image.load(os.path.join("imgs","bg.png")).convert_alpha(), (600, 900))
@@ -163,7 +163,7 @@ class Pipe():
         set the height of the pipe, from the top of the screen
         :return: None
         """
-        self.height = random.randrange(50, 450)
+        self.height = random.randrange(50, 600)
         self.top = self.height - self.PIPE_TOP.get_height()
         self.bottom = self.height + self.GAP
 
@@ -261,7 +261,7 @@ def blitRotateCenter(surf, image, topleft, angle):
 
     surf.blit(rotated_image, new_rect.topleft)
 
-def draw_window(win, birds, pipes, base, score, gen, pipe_ind):
+def draw_window(win, birds, pipes, base, score, gen, pipe_ind, is_start):
     """
     draws the windows for the main game loop
     :param win: pygame window surface
@@ -272,10 +272,14 @@ def draw_window(win, birds, pipes, base, score, gen, pipe_ind):
     :param pipe_ind: index of closest pipe
     :return: None
     """
+
     if gen == 0:
         gen = 1
     win.blit(bg_img, (0,0))
-
+    if is_start == False:
+        win.blit(game_start_surface, game_start_rect)
+        return 
+    
     for pipe in pipes:
         pipe.draw(win)
 
@@ -312,7 +316,7 @@ def eval_genomes(genomes, config):
     birds and sets their fitness based on the distance they
     reach in the game.
     """
-    global WIN, gen
+    global WIN, gen, is_start
     win = WIN
     gen += 1
 
@@ -332,7 +336,9 @@ def eval_genomes(genomes, config):
     base = Base(FLOOR)
     pipes = [Pipe(700)]
     score = 0
-
+    
+  
+    
     clock = pygame.time.Clock()
 
     run = True
@@ -345,7 +351,17 @@ def eval_genomes(genomes, config):
                 pygame.quit()
                 quit()
                 break
-
+            
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if is_start == False:
+                    is_start = True
+        
+        base.move()
+        # if is_start == False:
+        #     WIN.blit(bg_img, (0,0))
+        #     WIN.blit(game_start_surface, game_start_rect)
+        #     continue
+        
         pipe_ind = 0
         if len(birds) > 0:
             if len(pipes) > 1 and birds[0].x > pipes[0].x + pipes[0].PIPE_TOP.get_width():  # determine whether to use the first or second
@@ -360,8 +376,6 @@ def eval_genomes(genomes, config):
 
             if output[0] > 0.5:  # we use a tanh activation function so result will be between -1 and 1. if over 0.5 jump
                 bird.jump()
-
-        base.move()
 
         rem = []
         add_pipe = False
@@ -385,8 +399,18 @@ def eval_genomes(genomes, config):
         if add_pipe:
             score += 1
             # can add this line to give more reward for passing through a pipe (not required)
+            # bonus strategy
+            next_pipe = Pipe(WIN_WIDTH)
+            last_pipe = pipes[-1]
+            delta_height = abs(last_pipe.height - next_pipe.height)
+                
             for genome in ge:
-                genome.fitness += 5
+                if delta_height > 0 and delta_height < 100:
+                    genome.fitness += 2
+                elif delta_height >= 100 and delta_height < 250:
+                    genome.fitness += 4
+                elif delta_height >= 250:
+                    genome.fitness += 7
             pipes.append(Pipe(WIN_WIDTH))
 
         for r in rem:
@@ -398,14 +422,9 @@ def eval_genomes(genomes, config):
                 ge.pop(birds.index(bird))
                 birds.pop(birds.index(bird))
 
-        draw_window(WIN, birds, pipes, base, score, gen, pipe_ind)
+        draw_window(WIN, birds, pipes, base, score, gen, pipe_ind, is_start)
 
-        # break if score gets large enough
-        '''if score > 20:
-            pickle.dump(nets[0],open("best.pickle", "wb"))
-            break'''
-
-
+      
 def run(config_file):
     """
     runs the NEAT algorithm to train a neural network to play flappy bird.
@@ -438,4 +457,5 @@ if __name__ == '__main__':
     # current working directory.
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, 'config-feedforward.txt')
+    pygame.init()
     run(config_path)
